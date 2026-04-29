@@ -1,4 +1,5 @@
 # 左轮手枪游戏插件
+> 本项目 Fork 自 [zgojin/astrbot_plugin_rg](https://github.com/zgojin/astrbot_plugin_rg)，并在此基础上进行二次开发
 
 ## 一、插件概述
 基于 `AstrBot` 的群聊左轮手枪游戏插件，玩家可以在群聊中进行左轮手枪射击游戏，支持随机走火事件。
