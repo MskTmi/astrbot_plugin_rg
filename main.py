@@ -9,7 +9,7 @@ import os
 import logging
 
 # 插件目录
-PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_rg')
+PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_RG')
 # 确保插件目录存在
 if not os.path.exists(PLUGIN_DIR):
     os.makedirs(PLUGIN_DIR)
@@ -17,7 +17,7 @@ if not os.path.exists(PLUGIN_DIR):
 # 配置路径
 TEXTS_FILE = os.path.join(PLUGIN_DIR, 'revolver_game_texts.yml')
 
-@register("revolver_game", "长安某", "手枪", "1.3.2")
+@register("revolver_game", "MskTmi", "手枪", "0.1.0")
 class RevolverGamePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -91,14 +91,14 @@ class RevolverGamePlugin(Star):
                 async for result in self._handle_misfire(event, group_id):
                     yield result
 
-        if message_str.startswith("装填"):
+        if message_str.startswith("赌怪"):
             num_bullets = self._parse_bullet_count(message_str)
             if num_bullets is None:
-                yield event.plain_result("你输入的装填子弹数量不是有效的整数，请重新输入。")
+                yield event.plain_result("你输入的装填子弹数量不是有效的整数，请重新输入")
             else:
                 async for result in self.load_bullets(event, num_bullets):
                     yield result
-        elif message_str == "射爆":
+        elif message_str == "s":
             async for result in self.shoot(event):
                 yield result
 
@@ -106,9 +106,9 @@ class RevolverGamePlugin(Star):
     async def on_private_message(self, event: AstrMessageEvent):
         """处理私聊消息"""
         message_str = event.message_str.strip()
-        valid_commands = ["走火开", "走火关", "装填", "射爆"]
+        valid_commands = ["走火开", "走火关", "赌怪", "s"]
         if any(message_str.startswith(cmd) for cmd in valid_commands):
-            yield event.plain_result("该游戏仅限群聊中使用，请在群内游玩。")
+            yield event.plain_result("该游戏仅限群聊中使用，请在群内游玩")
 
     def _get_group_id(self, event: AstrMessageEvent):
         """获取群id"""
@@ -138,7 +138,8 @@ class RevolverGamePlugin(Star):
 
         misfire_desc = random.choice(self.texts.get('misfire_descriptions', []))
         user_reaction = random.choice(self.texts.get('user_reactions', [])).format(sender_nickname=sender_nickname)
-        message = f"{misfire_desc} {user_reaction} 不幸被击中！"
+        # message = f"{misfire_desc} {user_reaction} 不幸被击中！"
+        message = f"{misfire_desc} 不幸被击中！"
         try:
             yield event.plain_result(message)
         except Exception as e:
@@ -165,11 +166,11 @@ class RevolverGamePlugin(Star):
         self._remove_timer_job(job_id)
 
         if group_state and 'chambers' in group_state and any(group_state['chambers']):
-            yield event.plain_result(f"{sender_nickname}，游戏还未结束，不能重新装填，请继续射击！")
+            yield event.plain_result(f"本群已经开启了一个赌局！")
             return
 
         if x < 1 or x > 6:
-            yield event.plain_result(f"{sender_nickname}，装填的实弹数量必须在 1 到 6 之间，请重新输入。")
+            yield event.plain_result(f"{sender_nickname}，装填的实弹数量必须在 1 到 6 之间，请重新输入")
             return
 
         chambers = [False] * 6
@@ -183,7 +184,7 @@ class RevolverGamePlugin(Star):
         }
         self.group_states[group_id] = group_state
 
-        yield event.plain_result(f"{sender_nickname} 装填了 {x} 发实弹到 6 弹匣的左轮手枪，游戏开始！")
+        yield event.plain_result(f"{sender_nickname} 装填了 {x} 发实弹到 6 弹匣的左轮手枪，游戏开始！\n 可以发送“s”对自己开枪")
         self.start_timer(event, group_id, 180)
 
     async def shoot(self, event: AstrMessageEvent):
@@ -196,7 +197,7 @@ class RevolverGamePlugin(Star):
         self._remove_timer_job(job_id)
 
         if not group_state or 'chambers' not in group_state:
-            yield event.plain_result(f"{sender_nickname}，枪里好像没有子弹呢，请先装填。")
+            yield event.plain_result(f"枪里好像没有子弹呢，请先装填")
             return
 
         client = event.bot
@@ -216,7 +217,7 @@ class RevolverGamePlugin(Star):
         if remaining_bullets == 0:
             self._remove_timer_job(job_id)
             del self.group_states[group_id]
-            yield event.plain_result(f"{sender_nickname}，弹匣内的所有实弹都已射出，游戏结束。若想继续，可再次装填。")
+            yield event.plain_result(f"枪里的子弹全部射完了...本次赌局自动结束")
 
     async def _handle_real_shot(self, event: AstrMessageEvent, group_state, chambers, current_index, sender_nickname, client):
         """处理击中目标，更新状态并禁言用户"""
@@ -224,7 +225,8 @@ class RevolverGamePlugin(Star):
         group_state['current_chamber_index'] = (current_index + 1) % 6
         trigger_desc = random.choice(self.texts.get('trigger_descriptions', []))
         user_reaction = random.choice(self.texts.get('user_reactions', [])).format(sender_nickname=sender_nickname)
-        message = f"{trigger_desc}，{user_reaction}"
+        # message = f"{trigger_desc}，{user_reaction}"
+        message = f"{trigger_desc}"
         try:
             yield event.plain_result(message)
         except Exception as e:
